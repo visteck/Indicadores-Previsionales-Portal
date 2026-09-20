@@ -1,0 +1,201 @@
+{
+  "success": true,
+  "data": {
+    "periodo": "092026",
+    "UF": 41057.2,
+    "UFAnterior": 40873.77,
+    "UTM": 71721,
+    "UTA": 860652,
+    "TopeImponibleAFP_UF": 90,
+    "TopeImponibleIPS_UF": 60,
+    "TopeImponibleSC_UF": 135.2,
+    "RentaMinima": 553553,
+    "SIS": 1.78,
+    "ExpectativaVida": 0.72,
+    "RentabilidadProtegida": 0.9,
+    "AFP": {
+      "Capital": {
+        "CodigoSuper": "401",
+        "Cotizacion": "10",
+        "Comision": "1.44",
+        "CargoTrabajador": 11.44,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 11.54
+      },
+      "Cuprum": {
+        "CodigoSuper": "402",
+        "Cotizacion": "10",
+        "Comision": "1.44",
+        "CargoTrabajador": 11.44,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 11.54
+      },
+      "Habitat": {
+        "CodigoSuper": "403",
+        "Cotizacion": "10",
+        "Comision": "1.27",
+        "CargoTrabajador": 11.27,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 11.37
+      },
+      "PlanVital": {
+        "CodigoSuper": "405",
+        "Cotizacion": "10",
+        "Comision": "1.16",
+        "CargoTrabajador": 11.16,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 11.26
+      },
+      "ProVida": {
+        "CodigoSuper": "406",
+        "Cotizacion": "10",
+        "Comision": "1.45",
+        "CargoTrabajador": 11.45,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 11.55
+      },
+      "Modelo": {
+        "CodigoSuper": "404",
+        "Cotizacion": "10",
+        "Comision": "0.58",
+        "CargoTrabajador": 10.58,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 10.68
+      },
+      "Uno": {
+        "CodigoSuper": "407",
+        "Cotizacion": "10",
+        "Comision": "0.46",
+        "CargoTrabajador": 10.46,
+        "CargoEmpleador": 0.1,
+        "TotalPagar": 10.56
+      }
+    },
+    "asignacionFamiliar": {
+      "periodo": "092026",
+      "tramos": {
+        "A": {
+          "monto": 22601,
+          "requisitos": {
+            "minimo": 0,
+            "maximo": 649039
+          },
+          "descripcion": "renta < o = $ 649.039"
+        },
+        "B": {
+          "monto": 13870,
+          "requisitos": {
+            "minimo": 649040,
+            "maximo": 947990
+          },
+          "descripcion": "renta > $ 649.039 < = $ 947.990"
+        },
+        "C": {
+          "monto": 4382,
+          "requisitos": {
+            "minimo": 947991,
+            "maximo": 1478539
+          },
+          "descripcion": "renta > $ 947.990 < = $ 1.478.539"
+        },
+        "D": {
+          "monto": 0,
+          "requisitos": {
+            "minimo": 1478540,
+            "maximo": 999999999
+          },
+          "descripcion": "renta > $ 1.478.539"
+        }
+      },
+      "fecha_actualizacion": "2026-09-19T05:05:54.284Z",
+      "fuente": "Previred - Indicadores Previsionales"
+    },
+    "seguroCesantia": {
+      "periodo": "092026",
+      "PlazoIndefinido": {
+        "empleador": 2.4,
+        "trabajador": 0.6
+      },
+      "PlazoFijo": {
+        "empleador": 3,
+        "trabajador": 0
+      },
+      "PlazoIndefinido11": {
+        "empleador": 0.8,
+        "trabajador": 0
+      },
+      "CasaParticular": {
+        "empleador": 3,
+        "trabajador": 0
+      },
+      "fecha_actualizacion": "2026-09-19T05:05:54.284Z",
+      "fuente": "Previred - Indicadores Previsionales"
+    },
+    "impuestoUnico": {
+      "periodo": "092026",
+      "tramosImpuestoUnico": [
+        {
+          "tramoInferior": 0,
+          "tramoSuperior": 13.5,
+          "factor": 0,
+          "rebaja": 0
+        },
+        {
+          "tramoInferior": 13.5,
+          "tramoSuperior": 30,
+          "factor": 0.04,
+          "rebaja": 0.54
+        },
+        {
+          "tramoInferior": 30,
+          "tramoSuperior": 50,
+          "factor": 0.08,
+          "rebaja": 1.74
+        },
+        {
+          "tramoInferior": 50,
+          "tramoSuperior": 70,
+          "factor": 0.135,
+          "rebaja": 4.49
+        },
+        {
+          "tramoInferior": 70,
+          "tramoSuperior": 90,
+          "factor": 0.23,
+          "rebaja": 11.14
+        },
+        {
+          "tramoInferior": 90,
+          "tramoSuperior": 120,
+          "factor": 0.304,
+          "rebaja": 17.8
+        },
+        {
+          "tramoInferior": 120,
+          "tramoSuperior": 310,
+          "factor": 0.35,
+          "rebaja": 23.32
+        },
+        {
+          "tramoInferior": 310,
+          "tramoSuperior": null,
+          "factor": 0.4,
+          "rebaja": 38.82
+        }
+      ],
+      "metadata": {
+        "descripcion": "Tramos mensuales del Impuesto Unico de Segunda Categoria expresados en UTM",
+        "vigencia": "2026",
+        "fuente": "Servicio de Impuestos Internos: https://www.sii.cl/valores_y_fechas/impuesto_2da_categoria/impuesto2026.htm",
+        "actualizacion": "Verificado contra la tabla SII 2026"
+      }
+    },
+    "timestamp": "2026-09-19T05:05:54.284Z",
+    "status": "success"
+  },
+  "version": "1.0.0",
+  "cache": {
+    "source": "database",
+    "lastUpdate": "2026-09-19T05:05:54.284Z"
+  }
+}
