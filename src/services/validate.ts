@@ -14,6 +14,7 @@ export function validateResponse(input: unknown, requested?: Periodo): ApiRespon
   const data = object(response.data);
   if (typeof data.periodo !== 'string' || !/^(0[1-9]|1[0-2])\d{4}$/.test(data.periodo)) invalid();
   if (requested && data.periodo !== `${String(requested.mes).padStart(2, '0')}${requested.anio}`) throw new Error('La API devolvió un período diferente al solicitado.');
+  if (data.status !== 'success') invalid();
   for (const key of ['UF','UFAnterior','UTM','UTA','SIS','RentaMinima','RentabilidadProtegida','ExpectativaVida','TopeImponibleAFP_UF','TopeImponibleIPS_UF','TopeImponibleSC_UF']) numeric(data[key]);
   const afps = object(data.AFP);
   if (!Object.keys(afps).length) invalid();
@@ -22,6 +23,15 @@ export function validateResponse(input: unknown, requested?: Periodo): ApiRespon
     for (const key of ['CodigoSuper','Cotizacion','Comision']) text(afp[key]);
     for (const key of ['Cotizacion','Comision']) if (!/^\d+(\.\d+)?$/.test(String(afp[key]))) invalid();
     for (const key of ['CargoTrabajador','CargoEmpleador','TotalPagar']) numeric(afp[key]);
+  }
+  const apv = object(data.APV);
+  numeric(apv.topeMensual); numeric(apv.topeAnual);
+  const health = object(data.distribucionSaludCCAF);
+  numeric(health.CCAF); numeric(health.FONASA);
+  const heavyWork = object(data.cotizacionTrabajosPesados);
+  for (const name of ['trabajoPesado','trabajoMenosPesado']) {
+    const contribution = object(heavyWork[name]);
+    for (const key of ['cotizacion','empleador','trabajador']) numeric(contribution[key]);
   }
   const tax = object(data.impuestoUnico), family = object(data.asignacionFamiliar), insurance = object(data.seguroCesantia);
   for (const block of [tax, family, insurance]) if (block.periodo !== data.periodo) invalid();

@@ -4,9 +4,39 @@ import type { Periodo } from './services/validate';
 import type { ApiResponse, IndicadoresData } from './types/api.types';
 import { Header } from './components/Header';
 import { IndicatorCard } from './components/IndicatorCard';
+import { AdditionalIndicators } from './components/AdditionalIndicators';
 import { AFPTable } from './components/AFPTable';
 import { ImpuestoUnicoTable } from './components/ImpuestoUnicoTable';
 import { LoadingSpinner, ErrorMessage } from './components/LoadingSpinner';
+
+type TrendKey = 'UF' | 'UTM' | 'UTA' | 'SIS' | 'RentaMinima' | 'RentabilidadProtegida' | 'ExpectativaVida';
+type TrendSnapshot = Pick<IndicadoresData, 'periodo' | TrendKey>;
+type TrendResult =
+  | { capture: ApiResponse<IndicadoresData>; snapshots: TrendSnapshot[] }
+  | { capture: ApiResponse<IndicadoresData>; error: string };
+
+const toInputMonth = (periodo: string) => `${periodo.slice(2)}-${periodo.slice(0, 2)}`;
+
+const previousTwelvePeriods = (periodo: string): Periodo[] => {
+  const anio = Number(periodo.slice(2));
+  const mes = Number(periodo.slice(0, 2));
+  return Array.from({ length: 12 }, (_, index) => {
+    const offset = 12 - index;
+    const monthIndex = anio * 12 + mes - 1 - offset;
+    return { anio: Math.floor(monthIndex / 12), mes: monthIndex % 12 + 1 };
+  });
+};
+
+const toTrendSnapshot = ({ data }: ApiResponse<IndicadoresData>): TrendSnapshot => ({
+  periodo: data.periodo,
+  UF: data.UF,
+  UTM: data.UTM,
+  UTA: data.UTA,
+  SIS: data.SIS,
+  RentaMinima: data.RentaMinima,
+  RentabilidadProtegida: data.RentabilidadProtegida,
+  ExpectativaVida: data.ExpectativaVida,
+});
 
 function App() {
   const [capture, setCapture] = useState<ApiResponse<IndicadoresData> | null>(null);
@@ -14,21 +44,53 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState<Periodo | undefined>();
   const [month, setMonth] = useState('');
+  const [latestPeriod, setLatestPeriod] = useState<string | null>(null);
+  const [trendResult, setTrendResult] = useState<TrendResult | null>(null);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     getAllIndicadores(periodo, controller.signal).then(result => {
-      if (!controller.signal.aborted) setCapture(result);
+      if (!controller.signal.aborted) {
+        setCapture(result);
+        if (!periodo) {
+          setLatestPeriod(result.data.periodo);
+          setMonth(toInputMonth(result.data.periodo));
+        }
+      }
     }).catch(err => {
       if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'No se pudo completar la consulta.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [periodo, revision]);
+  useEffect(() => {
+    if (!capture) return;
+    const currentCapture = capture;
+    const controller = new AbortController();
+    Promise.all(previousTwelvePeriods(capture.data.periodo).map(previous => getAllIndicadores(previous, controller.signal)))
+      .then(previous => {
+        if (!controller.signal.aborted) {
+          setTrendResult({ capture: currentCapture, snapshots: [...previous, currentCapture].map(toTrendSnapshot) });
+        }
+      })
+      .catch(err => {
+        if (!controller.signal.aborted) {
+          setTrendResult({
+            capture: currentCapture,
+            error: err instanceof Error ? err.message : 'No se pudo cargar el historial de doce meses.',
+          });
+        }
+      });
+    return () => controller.abort();
+  }, [capture]);
   const query = (next?: Periodo) => {
     setCapture(null); setError(null); setLoading(true);
     setPeriodo(next); setRevision(value => value + 1);
   };
   const data = capture?.data;
+  const currentTrend = capture && trendResult?.capture === capture ? trendResult : null;
+  const trendSnapshots = currentTrend && 'snapshots' in currentTrend ? currentTrend.snapshots : null;
+  const trendLoading = Boolean(capture && !currentTrend);
+  const trendError = currentTrend && 'error' in currentTrend ? currentTrend.error : null;
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -57,6 +119,10 @@ function App() {
     const anio = periodo.substring(2);
     return `${meses[mes]} ${anio}`;
   };
+  const trendRange = trendSnapshots
+    ? `${formatPeriodo(trendSnapshots[0].periodo)} a ${formatPeriodo(trendSnapshots[trendSnapshots.length - 1].periodo)}`
+    : undefined;
+  const trendFor = (key: TrendKey) => trendSnapshots?.map(snapshot => snapshot[key]);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -68,12 +134,19 @@ function App() {
           if (!anio || !mes) return;
           query({ anio, mes });
         }}>
-          <label className="font-semibold text-slate-700">Período de remuneraciones
-            <input aria-label="Período de remuneraciones" type="month" required value={month}
-              onChange={event => setMonth(event.target.value)} className="block border border-slate-400 rounded-lg p-2 mt-2" />
-          </label>
-          <button type="submit" className="bg-blue-700 text-white rounded-lg px-4 py-3">Consultar período</button>
-          <button type="button" onClick={() => { setMonth(''); query(); }} className="border border-blue-700 text-blue-800 rounded-lg px-4 py-3">Último almacenado</button>
+          {month ? (
+            <label className="font-semibold text-slate-700">Período de remuneraciones
+              <input aria-label="Período de remuneraciones" lang="es-CL" type="month" required value={month}
+                onChange={event => {
+                  if (event.target.value) setMonth(event.target.value);
+                  else if (latestPeriod) setMonth(toInputMonth(latestPeriod));
+                }} className="block border border-slate-400 rounded-lg p-2 mt-2" />
+            </label>
+          ) : (
+            <p className="font-semibold text-slate-700" role="status">Consultando el último período disponible...</p>
+          )}
+          <button type="submit" disabled={!month} className="bg-blue-700 text-white rounded-lg px-4 py-3 disabled:opacity-50 disabled:cursor-not-allowed">Consultar período</button>
+          <button type="button" onClick={() => query()} className="border border-blue-700 text-blue-800 rounded-lg px-4 py-3">Último almacenado</button>
           <p className="w-full text-sm text-slate-600">Solo se muestran períodos disponibles. Consultar de nuevo no fuerza una actualización desde Previred.</p>
         </form>
         {loading && <div role="status"><LoadingSpinner /></div>}
@@ -96,6 +169,8 @@ function App() {
             subtitle={`UF anterior: ${formatCurrencyWithDecimals(data.UFAnterior)}`}
             color="primary"
             badge={formatPeriodo(data.periodo)}
+            trend={trendFor('UF')}
+            trendRange={trendRange}
           />
 
           <IndicatorCard
@@ -108,6 +183,8 @@ function App() {
             value={formatCurrency(data.UTM)}
             color="green"
             badge={formatPeriodo(data.periodo)}
+            trend={trendFor('UTM')}
+            trendRange={trendRange}
           />
 
           <IndicatorCard
@@ -120,6 +197,8 @@ function App() {
             value={formatCurrency(data.UTA)}
             color="blue"
             badge={formatPeriodo(data.periodo)}
+            trend={trendFor('UTA')}
+            trendRange={trendRange}
           />
 
           <IndicatorCard
@@ -132,6 +211,8 @@ function App() {
             value={`${data.SIS}%`}
             color="purple"
             badge={formatPeriodo(data.periodo)}
+            trend={trendFor('SIS')}
+            trendRange={trendRange}
           />
 
           <IndicatorCard
@@ -145,28 +226,29 @@ function App() {
             subtitle="Trabajadores dependientes"
             color="orange"
             badge={formatPeriodo(data.periodo)}
+            trend={trendFor('RentaMinima')}
+            trendRange={trendRange}
           />
 
-          <IndicatorCard
-            icon={
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            }
-            title="Tope Imponible AFP"
-            value={`${data.TopeImponibleAFP_UF} UF`}
-            subtitle={formatCurrency(data.TopeImponibleAFP_UF * data.UF)}
-            color="primary"
-            badge={formatPeriodo(data.periodo)}
-          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <IndicatorCard icon="%" title="Rentabilidad Protegida" value={`${data.RentabilidadProtegida.toLocaleString('es-CL')} %`} badge={formatPeriodo(data.periodo)} />
-          <IndicatorCard icon="%" title="Expectativa de Vida" value={`${data.ExpectativaVida.toLocaleString('es-CL')} %`} subtitle="Tasa porcentual" badge={formatPeriodo(data.periodo)} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <IndicatorCard icon="%" title="Rentabilidad Protegida" value={`${data.RentabilidadProtegida.toLocaleString('es-CL')} %`} badge={formatPeriodo(data.periodo)} trend={trendFor('RentabilidadProtegida')} trendRange={trendRange} />
+          <IndicatorCard icon="%" title="Expectativa de Vida" value={`${data.ExpectativaVida.toLocaleString('es-CL')} %`} subtitle="Tasa porcentual" badge={formatPeriodo(data.periodo)} trend={trendFor('ExpectativaVida')} trendRange={trendRange} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <IndicatorCard icon="UF" title="Tope Imponible AFP" value={`${data.TopeImponibleAFP_UF.toLocaleString('es-CL')} UF`} subtitle={`Equivalente con UF de la captura: ${formatCurrency(data.TopeImponibleAFP_UF * data.UF)}`} />
           <IndicatorCard icon="UF" title="Tope Imponible IPS" value={`${data.TopeImponibleIPS_UF.toLocaleString('es-CL')} UF`} subtitle={`Equivalente con UF de la captura: ${formatCurrency(data.TopeImponibleIPS_UF * data.UF)}`} />
           <IndicatorCard icon="UF" title="Tope Seguro de Cesantía" value={`${data.TopeImponibleSC_UF.toLocaleString('es-CL')} UF`} subtitle={`Equivalente con UF de la captura: ${formatCurrency(data.TopeImponibleSC_UF * data.UF)}`} />
         </div>
+        {trendLoading && <p className="text-sm text-slate-500 mb-4" role="status">Cargando tendencia de los últimos doce meses...</p>}
+        {trendError && <p className="text-sm text-amber-900 bg-amber-50 rounded-lg p-3 mb-4" role="alert">No se pudo cargar el historial de doce meses: {trendError}</p>}
+        <AdditionalIndicators
+          apv={data.APV}
+          distribucionSaludCCAF={data.distribucionSaludCCAF}
+          cotizacionTrabajosPesados={data.cotizacionTrabajosPesados}
+        />
         <p className="text-slate-700 mb-5">Los cargos del empleador se muestran separados de los descuentos del trabajador. El total AFP no equivale al descuento del trabajador.</p>
         {/* Tabla de AFP */}
         <div className="mb-8">

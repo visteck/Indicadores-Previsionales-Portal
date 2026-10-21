@@ -19,16 +19,23 @@ try {
   const { getAllIndicadores } = await import(pathToFileURL(`${folder}/api.service.mjs`));
   const fixture = JSON.parse(readFileSync('test/fixtures/capture.json','utf8'));
   const test = async (name, fn) => { await fn(); count++; console.log(`OK ${count}: ${name}`); };
-  await test('Acepta el contrato real con metadatos, AFP completas y ocho tramos', () => {
+  await test('Acepta el contrato real con APV, cotizaciones adicionales y ocho tramos', () => {
     const result = validateResponse(fixture, {anio:2026,mes:9});
     assert.equal(result.data.impuestoUnico.tramosImpuestoUnico.length,8);
     assert.equal(result.data.AFP.Capital.CargoEmpleador,0.1);
     assert.equal(result.data.ExpectativaVida,0.72);
+    assert.equal(result.data.APV.topeMensual,2052860);
+    assert.equal(result.data.distribucionSaludCCAF.CCAF,4.2);
+    assert.equal(result.data.cotizacionTrabajosPesados.trabajoPesado.cotizacion,4);
   });
   await test('Rechaza período distinto sin sustituirlo', () => assert.throws(() => validateResponse(fixture,{anio:2026,mes:8}), /diferente/));
   for (const [name, mutate] of [
     ['SIS ausente', f => {delete f.data.SIS;}],
     ['cargo AFP ausente', f => {delete f.data.AFP.Capital.CargoEmpleador;}],
+    ['tope APV ausente', f => {delete f.data.APV.topeMensual;}],
+    ['distribución de salud inválida', f => {f.data.distribucionSaludCCAF.CCAF='4.2';}],
+    ['cotización de trabajos pesados incompleta', f => {delete f.data.cotizacionTrabajosPesados.trabajoPesado.trabajador;}],
+    ['estado interno desconocido', f => {f.data.status='error';}],
     ['contrato tributario antiguo', f => {f.data.impuestoUnico.tramos=f.data.impuestoUnico.tramosImpuestoUnico;delete f.data.impuestoUnico.tramosImpuestoUnico;}],
     ['períodos internos diferentes', f => {f.data.asignacionFamiliar.periodo='082026';}],
     ['timestamp inventado o inválido', f => {f.cache.lastUpdate='invalid';}],
@@ -52,16 +59,42 @@ try {
     globalThis.fetch=(_url,{signal})=>new Promise((_resolve,reject)=>{signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')));});
     const controller=new AbortController();const pending=getAllIndicadores(undefined,controller.signal);controller.abort();await assert.rejects(pending,{name:'AbortError'});
   });
-  for (const component of ['AFPTable','ImpuestoUnicoTable']) {
+  for (const component of ['AFPTable','ImpuestoUnicoTable','AdditionalIndicators','IndicatorCard']) {
     const file = `${folder}/${component}.cjs`;
     writeFileSync(file, ts.transpileModule(readFileSync(`src/components/${component}.tsx`,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText);
     const View=createRequire(import.meta.url)(file)[component];
     await test(`Renderiza ${component} con el contrato actual`,()=>{
-      const props=component==='AFPTable'?{data:fixture.data.AFP}:{tramos:fixture.data.impuestoUnico.tramosImpuestoUnico};
+      const props=component==='AFPTable'?{data:fixture.data.AFP}:component==='ImpuestoUnicoTable'?{tramos:fixture.data.impuestoUnico.tramosImpuestoUnico}:{
+        ...(component==='AdditionalIndicators'?{
+          apv:fixture.data.APV,
+          distribucionSaludCCAF:fixture.data.distribucionSaludCCAF,
+          cotizacionTrabajosPesados:fixture.data.cotizacionTrabajosPesados,
+        }:{
+          icon:'UF',
+          title:'UF',
+          value:'$41.247,63',
+          trend:[39597.67,39643.59,39727.96,39706.07,39790.63,39841.72,40120.2,40610.69,40820.31,40844.79,40873.77,41057.2,41247.63],
+          trendRange:'octubre 2025 a octubre 2026',
+        }),
+      };
       const html=renderToStaticMarkup(createElement(View,props));
       assert.ok(!html.includes('NaN'));
       if(component==='AFPTable'){assert.ok(html.includes('Empleador'));assert.ok(html.includes('11,54'));}
-      else {assert.ok(html.includes('38.82'));assert.ok(html.includes('Sin límite superior'));}
+      else if(component==='ImpuestoUnicoTable'){assert.ok(html.includes('38.82'));assert.ok(html.includes('Sin límite superior'));}
+      else if(component==='AdditionalIndicators') {
+        assert.ok(html.includes('2.052.860'));
+        assert.ok(html.includes('24.634.320'));
+        assert.ok(html.includes('CCAF'));
+        assert.ok(html.includes('4,2%'));
+        assert.ok(html.includes('Trabajo menos pesado'));
+      } else {
+        assert.ok(html.includes('card flex flex-col'));
+        assert.ok(html.includes('mt-auto flex items-end'));
+        assert.ok(html.includes('<polyline'));
+        assert.ok(html.includes('<line'));
+        assert.ok(html.includes('fill-opacity="0.25"'));
+        assert.ok(html.includes('Evolución de UF desde octubre 2025 a octubre 2026'));
+      }
     });
   }
   console.log(`${count} pruebas aprobadas.`);

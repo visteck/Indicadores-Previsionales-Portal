@@ -12,6 +12,27 @@ export interface AFPData {
   [key: string]: AFPItem;
 }
 
+export interface APVData {
+  topeMensual: number;
+  topeAnual: number;
+}
+
+export interface DistribucionSaludCCAFData {
+  CCAF: number;
+  FONASA: number;
+}
+
+export interface CotizacionTrabajoPesadoData {
+  cotizacion: number;
+  empleador: number;
+  trabajador: number;
+}
+
+export interface CotizacionTrabajosPesadosData {
+  trabajoPesado: CotizacionTrabajoPesadoData;
+  trabajoMenosPesado: CotizacionTrabajoPesadoData;
+}
+
 export interface TramoImpuestoUnico {
   tramoInferior: number;
   tramoSuperior: number | null;
@@ -70,6 +91,9 @@ export interface IndicadoresData {
   RentabilidadProtegida: number;
   timestamp: string;
   AFP: AFPData;
+  APV: APVData;
+  distribucionSaludCCAF: DistribucionSaludCCAFData;
+  cotizacionTrabajosPesados: CotizacionTrabajosPesadosData;
   impuestoUnico: {
     periodo: string;
     tramosImpuestoUnico: TramoImpuestoUnico[];
@@ -82,6 +106,7 @@ export interface IndicadoresData {
   };
   asignacionFamiliar: AsignacionFamiliarData;
   seguroCesantia: SeguroCesantiaData;
+  status: 'success';
 }
 
 export interface CacheInfo {

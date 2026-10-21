@@ -71,6 +71,26 @@
         "TotalPagar": 10.56
       }
     },
+    "APV": {
+      "topeMensual": 2052860,
+      "topeAnual": 24634320
+    },
+    "distribucionSaludCCAF": {
+      "CCAF": 4.2,
+      "FONASA": 2.8
+    },
+    "cotizacionTrabajosPesados": {
+      "trabajoPesado": {
+        "cotizacion": 4,
+        "empleador": 2,
+        "trabajador": 2
+      },
+      "trabajoMenosPesado": {
+        "cotizacion": 2,
+        "empleador": 1,
+        "trabajador": 1
+      }
+    },
     "asignacionFamiliar": {
       "periodo": "092026",
       "tramos": {
@@ -107,7 +127,7 @@
           "descripcion": "renta > $ 1.478.539"
         }
       },
-      "fecha_actualizacion": "2026-09-19T05:05:54.284Z",
+      "fecha_actualizacion": "2026-10-21T21:58:32.996Z",
       "fuente": "Previred - Indicadores Previsionales"
     },
     "seguroCesantia": {
@@ -128,7 +148,7 @@
         "empleador": 3,
         "trabajador": 0
       },
-      "fecha_actualizacion": "2026-09-19T05:05:54.284Z",
+      "fecha_actualizacion": "2026-10-21T21:58:32.996Z",
       "fuente": "Previred - Indicadores Previsionales"
     },
     "impuestoUnico": {
@@ -190,12 +210,12 @@
         "actualizacion": "Verificado contra la tabla SII 2026"
       }
     },
-    "timestamp": "2026-09-19T05:05:54.284Z",
+    "timestamp": "2026-10-21T21:58:32.996Z",
     "status": "success"
   },
   "version": "1.0.0",
   "cache": {
     "source": "database",
-    "lastUpdate": "2026-09-19T05:05:54.284Z"
+    "lastUpdate": "2026-10-21T21:58:32.996Z"
   }
 }
