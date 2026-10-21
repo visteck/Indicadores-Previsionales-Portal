@@ -24,7 +24,8 @@ No se requiere crear otra aplicación Node, ejecutar npm en cPanel ni reiniciar 
    relativas; funciona tanto en dominio como en subcarpeta.
 7. Verificar en navegador: carga CSS/JS sin 404, consulta último almacenado,
    consulta del mismo año/mes, AFP con sus cargos, ocho tramos de impuesto,
-   porcentajes, metadatos UTC, mensaje para un período ausente y vista móvil.
+   topes APV, distribución de salud, trabajos pesados, tendencias, metadatos UTC,
+   mensaje para un período ausente y vista móvil.
 8. Confirmar en Network que se usa únicamente GET /indicadores (sin refresh ni
    X-Admin-Refresh-Token). La API pública observada permite CORS; comprobarlo desde
    el origen final. Revisar errores Console antes de dar el despliegue por terminado.
@@ -38,10 +39,16 @@ Si se cambia VITE_API_BASE_URL, ejecutar npm ci, npm test, npm run lint y
 npm run build en el equipo de desarrollo. Publicar exclusivamente dist.
 No publicar node_modules, src, fixtures ni archivos .env.
 
-## Git local
+## Git
 
-Copiar las fuentes en el repositorio real del portal y revisar git diff antes
-de agregar archivos. El ZIP recibido no contiene historial Git, por lo que aquí
-no se hizo commit ni push. Mensaje sugerido:
+Versionar las fuentes, pruebas y documentación en el repositorio del portal.
+Antes de publicar, revisar los cambios con `git status --short` y `git diff --check`.
+Usar mensajes en español con el formato de Conventional Commits, por ejemplo:
 
-feat: adaptar portal al contrato actual de indicadores previsionales
+```sh
+git commit -m "feat: incorporar tendencias de indicadores previsionales"
+git push origin <rama>
+```
+
+Generar y publicar `portal-produccion.zip` desde `dist`; no subir credenciales,
+archivos `.env` ni `node_modules`.
